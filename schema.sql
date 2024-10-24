@@ -23,7 +23,7 @@ ALTER TABLE `messages`
   ADD CONSTRAINT `fk_user1` FOREIGN KEY (`user1`) REFERENCES `users` (`username`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_user2` FOREIGN KEY (`user2`) REFERENCES `users` (`username`) ON DELETE CASCADE;
 
-                                                                                            -- schema.sql
+-- schema.sql
 
 -- Existing tables (users and messages) remain unchanged
 
