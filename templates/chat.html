@@ -1,77 +1,168 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat with {{ partner }}</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <title>Chat with {{ partner }} - Chat App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#1f2937',
+                        background: '#111827',
+                        text: '#e5e7eb',
+                    },
+                },
+            },
+            darkMode: 'class',
+        }
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
 </head>
-<body>
-    <div class="chat-container">
-        <h2>Chat with {{ partner }}</h2>
-
-        <!-- Button to go to users page -->
-        <button onclick="window.location.href='/users';">Go to Users Page</button>
-
-        <div id="messages">
-            {% for user1, message, timestamp in messages %}
-                <div class="message {% if user1 == username %}sent{% else %}received{% endif %}">
-                    <p><strong>{{ user1 }}:</strong> {{ message }} <span class="timestamp">{{ timestamp }}</span></p>
-                </div>
-            {% endfor %}
+<body class="bg-background text-text">
+    <div class="container mx-auto max-w-2xl p-4 mt-10">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-primary">Chat with {{ partner }}</h2>
+            <div class="flex flex-wrap justify-end gap-2 mb-2">
+                <button onclick="window.location.href='/users';"
+                        class="bg-primary text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition duration-300 text-sm sm:text-base">
+                    Back to Users
+                </button>
+                <button onclick="window.location.href='/profile';"
+                        class="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition duration-300 text-sm sm:text-base">
+                    Profile
+                </button>
+            </div>
         </div>
-
-        <div class="input-container">
-            <input id="message" placeholder="Type your message..." autocomplete="off">
-            <button id="send">Send</button>
+        <div id="partner-profile" class="mb-4 p-4 bg-secondary rounded-lg">
+            <img id="partner-avatar" src="" alt="{{ partner }}'s avatar" class="w-12 h-12 rounded-full inline-block mr-2">
+            <span id="partner-status" class="text-sm"></span>
+        </div>
+        <div class="bg-secondary rounded-lg p-4 h-[60vh] flex flex-col">
+            <div id="messages" class="flex-1 overflow-y-auto space-y-4 mb-4">
+                {% for user1, message, timestamp in messages %}
+                    <div class="flex {% if user1 == username %}justify-end{% endif %}">
+                        <div class="max-w-[70%] p-3 rounded-lg {% if user1 == username %}bg-blue-600 text-white{% else %}bg-gray-700{% endif %}">
+                            <p><strong>{{ user1 }}:</strong> {{ message }}</p>
+                            <span class="text-xs text-gray-400 mt-1 block">{{ timestamp }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div id="typing-indicator" class="text-sm text-gray-400 mb-2 hidden">
+                <span id="typing-text"></span>
+            </div>
+            <div class="flex space-x-2 mt-2">
+                <input id="message" type="text" placeholder="Type your message..."
+                       class="flex-1 p-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base">
+                <button id="send"
+                        class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300 flex-shrink-0 text-sm sm:text-base">
+                    Send
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
         const socket = io();
-
-        socket.on('connect', function() {
-            socket.emit('join', {username: "{{ username }}"});
-        });
-
         const messages = document.getElementById('messages');
         const partner = "{{ partner }}";
         const username = "{{ username }}";
+        let typingTimer;
+        let isTyping = false;
 
-        document.getElementById('send').onclick = function() {
-            sendMessage();
-        };
+        socket.on('connect', function() {
+            socket.emit('join', {username: username});
+            socket.emit('get_user_profile', {username: partner});
+        });
 
+        document.getElementById('send').onclick = sendMessage;
+        document.getElementById('message').addEventListener('input', handleTyping);
         document.getElementById('message').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendMessage();
             }
         });
 
+        function handleTyping() {
+            if (!isTyping) {
+                isTyping = true;
+                socket.emit('typing', {username: username, partner: partner, is_typing: true});
+            }
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                isTyping = false;
+                socket.emit('typing', {username: username, partner: partner, is_typing: false});
+            }, 2000);
+        }
+
         function sendMessage() {
             const messageInput = document.getElementById('message');
-            const message = messageInput.value;
+            const message = messageInput.value.trim();
             if (message) {
-                // Emit the message to the server
                 socket.emit('send_message', { message: message, username: username, partner: partner });
-                messageInput.value = ''; // Clear the input
-                messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
+                messageInput.value = '';
+                messages.scrollTop = messages.scrollHeight;
+                // Clear typing indicator when sending a message
+                clearTimeout(typingTimer);
+                isTyping = false;
+                socket.emit('typing', {username: username, partner: partner, is_typing: false});
             }
         }
 
         socket.on('receive_message', function(data) {
             const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const isCurrentUser = data.username === username;
+            const messageHtml = `
+                <div class="flex ${isCurrentUser ? 'justify-end' : ''}">
+                    <div class="max-w-[70%] p-3 rounded-lg ${isCurrentUser ? 'bg-blue-600 text-white' : 'bg-gray-700'}">
+                        <p><strong>${data.username}:</strong> ${data.message}</p>
+                        <span class="text-xs text-gray-400 mt-1 block">${timestamp}</span>
+                        <span class="text-xs text-gray-400 mt-1 block message-status" data-id="${data.id}">Sent</span>
+                    </div>
+                </div>
+            `;
+            messages.innerHTML += messageHtml;
+            messages.scrollTop = messages.scrollHeight;
 
-            // Check if the message was sent by the current user
-            if (data.username === username) {
-                // Append the sent message
-                messages.innerHTML += `<div class="message sent"><p><strong>${username}:</strong> ${data.message} <span class="timestamp">${timestamp}</span></p></div>`;
-            } else {
-                // Append the received message
-                messages.innerHTML += `<div class="message received"><p><strong>${data.username}:</strong> ${data.message} <span class="timestamp">${timestamp}</span></p></div>`;
+            if (!isCurrentUser) {
+                socket.emit('mark_read', {message_id: data.id, reader: username, sender: data.username});
             }
-            messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
+        });
+
+        socket.on('user_typing', function(data) {
+            const typingIndicator = document.getElementById('typing-indicator');
+            const typingText = document.getElementById('typing-text');
+            if (data.username === partner) {
+                if (data.is_typing) {
+                    typingText.textContent = `${partner} is typing...`;
+                    typingIndicator.classList.remove('hidden');
+                } else {
+                    typingIndicator.classList.add('hidden');
+                }
+            }
+        });
+
+        socket.on('message_read', function(data) {
+            const messageStatus = document.querySelector(`.message-status[data-id="${data.message_id}"]`);
+            if (messageStatus) {
+                messageStatus.textContent = 'Read';
+            }
+        });
+
+        socket.on('user_profile', function(data) {
+            document.getElementById('partner-avatar').src = data.avatar || '/static/default-avatar.png';
+            document.getElementById('partner-status').textContent = data.status_message || '';
+        });
+
+        socket.on('profile_updated', function(data) {
+            if (data.username === partner) {
+                document.getElementById('partner-avatar').src = data.avatar || '/static/default-avatar.png';
+                document.getElementById('partner-status').textContent = data.status_message || '';
+            }
         });
     </script>
 </body>

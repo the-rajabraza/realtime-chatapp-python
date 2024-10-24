@@ -1,10 +1,10 @@
-from flask import render_template, request, redirect, session
-import dbfunctions  # Add this line
+from flask import render_template, request, redirect, session, url_for
+import dbfunctions
 
 def register_routes(app, mysql, session):
     @app.route('/')
     def home():
-        return redirect('/login')
+        return redirect(url_for('login'))
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
@@ -15,14 +15,11 @@ def register_routes(app, mysql, session):
                 dbfunctions.add_user(mysql, username)
             session['username'] = username
             session.permanent = True
-            return redirect('/users')
+            return redirect(url_for('users'))
         return render_template('login.html')
 
     @app.route('/users')
     def users():
-        if 'username' not in session:
-            return redirect('/login')
-
         cursor = mysql.connection.cursor()
         cursor.execute('SELECT username FROM users WHERE username != %s', (session['username'],))
         all_users = cursor.fetchall()
@@ -34,11 +31,19 @@ def register_routes(app, mysql, session):
         cursor.close()
         return render_template('users.html', username=session['username'], available_users=available_users, chatted_users=chatted_users)
 
+    @app.route('/profile', methods=['GET', 'POST'])
+    def profile():
+        if request.method == 'POST':
+            avatar = request.form['avatar']
+            status_message = request.form['status_message']
+            dbfunctions.update_user_profile(mysql, session['username'], avatar, status_message)
+            return redirect(url_for('profile'))
+
+        user_profile = dbfunctions.get_user_profile(mysql, session['username'])
+        return render_template('profile.html', username=session['username'], profile=user_profile)
+
     @app.route('/chat/<string:partner>')
     def chat(partner):
-        if 'username' not in session:
-            return redirect('/login')
-
         cursor = mysql.connection.cursor()
         cursor.execute('''
             SELECT user1, message, timestamp 
@@ -51,3 +56,8 @@ def register_routes(app, mysql, session):
         cursor.close()
 
         return render_template('chat.html', username=session['username'], partner=partner, messages=messages)
+
+    @app.route('/logout', methods=['POST'])
+    def logout():
+        session.clear()  # Clear the user's session
+        return redirect(url_for('login'))  # Redirect to the login page
