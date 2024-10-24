@@ -71,5 +71,4 @@ python app.py
 By default, the application will run on `http://127.0.0.1:5000/`.
 
 ## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
