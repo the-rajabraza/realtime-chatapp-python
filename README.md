@@ -1,4 +1,6 @@
-```markdown
+Got it! Let's ensure the links are formatted correctly and make the virtual environment section consistent with the rest. Here's the updated `README.md`:
+
+
 # Real-Time Chat Web Application
 
 A real-time chat web application built with Flask, Flask-SocketIO, and Flask-MySQLdb. This project allows users to join rooms and communicate with each other in real-time.
