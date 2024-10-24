@@ -28,4 +28,4 @@ register_routes(app, mysql, session)
 register_socketio_handlers(socketio, mysql)
 
 if __name__ == '__main__':
-    socketio.run(app, host='192.168.0.248', port=5000, debug=True)
+    socketio.run(app, host='YOUR-Device-IP OR Default', port=5000, debug=True)
