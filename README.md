@@ -1,6 +1,6 @@
 # Real-Time Chat Web Application
 
-A real-time chat web application built with Flask, Flask-SocketIO, and Flask-MySQLdb. This project allows users to join rooms and communicate with each other in real-time.
+A real-time chat web application built with Flask, Flask-SocketIO, and Flask-MySQLdb and Tailwind CSS. This project allows users to join rooms and communicate with each other in real-time.
 
 ## Table of Contents
 
@@ -23,6 +23,7 @@ A real-time chat web application built with Flask, Flask-SocketIO, and Flask-MyS
 - [Flask-SocketIO](https://flask-socketio.readthedocs.io/) - Enables WebSocket communication.
 - [Flask-MySQLdb](https://flask-mysqldb.readthedocs.io/) - MySQL database integration with Flask.
 - [Python](https://www.python.org/) - The programming language used for the backend.
+- [Tailwind CSS](https://tailwindcss.com/) - A utility-first CSS framework to build beautiful designs easily.
 
 ## Installation
 
@@ -30,6 +31,7 @@ A real-time chat web application built with Flask, Flask-SocketIO, and Flask-MyS
 
 - Python
 - MySQL Server
+- Tailwind CSS
 
 ### Create a Virtual Environment (Optional but Recommended)
 To create a virtual environment, run:
