@@ -69,3 +69,7 @@ python app.py
 ```
 
 By default, the application will run on `http://127.0.0.1:5000/`.
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
