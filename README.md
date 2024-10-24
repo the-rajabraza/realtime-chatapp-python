@@ -1,5 +1,3 @@
-Got it! Let's ensure the links are formatted correctly and make the virtual environment section consistent with the rest. Here's the updated `README.md`:
-
 ```markdown
 # Real-Time Chat Web Application
 
