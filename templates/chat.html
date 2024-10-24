@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with {{ partner }}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <h2>Chat with {{ partner }}</h2>
+
+        <!-- Button to go to users page -->
+        <button onclick="window.location.href='/users';">Go to Users Page</button>
+
+        <div id="messages">
+            {% for user1, message, timestamp in messages %}
+                <div class="message {% if user1 == username %}sent{% else %}received{% endif %}">
+                    <p><strong>{{ user1 }}:</strong> {{ message }} <span class="timestamp">{{ timestamp }}</span></p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="input-container">
+            <input id="message" placeholder="Type your message..." autocomplete="off">
+            <button id="send">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+
+        socket.on('connect', function() {
+            socket.emit('join', {username: "{{ username }}"});
+        });
+
+        const messages = document.getElementById('messages');
+        const partner = "{{ partner }}";
+        const username = "{{ username }}";
+
+        document.getElementById('send').onclick = function() {
+            sendMessage();
+        };
+
+        document.getElementById('message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const messageInput = document.getElementById('message');
+            const message = messageInput.value;
+            if (message) {
+                // Emit the message to the server
+                socket.emit('send_message', { message: message, username: username, partner: partner });
+                messageInput.value = ''; // Clear the input
+                messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
+            }
+        }
+
+        socket.on('receive_message', function(data) {
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Check if the message was sent by the current user
+            if (data.username === username) {
+                // Append the sent message
+                messages.innerHTML += `<div class="message sent"><p><strong>${username}:</strong> ${data.message} <span class="timestamp">${timestamp}</span></p></div>`;
+            } else {
+                // Append the received message
+                messages.innerHTML += `<div class="message received"><p><strong>${data.username}:</strong> ${data.message} <span class="timestamp">${timestamp}</span></p></div>`;
+            }
+            messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
+        });
+    </script>
+</body>
+</html>
